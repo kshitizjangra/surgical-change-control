@@ -15,6 +15,7 @@ It prevents:
 - Regressions introduced by over-eager refactoring
 - Vague outputs that don't say where changes belong
 - Silent scope expansion across similar-looking sections
+- Confident claims based on unverified assumptions
 
 Instead, it enforces:
 
@@ -22,6 +23,56 @@ Instead, it enforces:
 - User confirmation before touching multiple locations
 - A protected-by-default policy for everything not explicitly in scope
 - Clear reporting of what was changed, where, and why
+- **Verification before confidence** — no assumption is treated as fact
+
+---
+
+## Files in This Repo
+
+| File | Description |
+|---|---|
+| [`skill.md`](./skill.md) | Original skill definition with core surgical change control rules |
+| [`updated_skill.md`](./updated_skill.md) | **Latest version** — includes all original rules + new Verification Before Confidence layer |
+| [`README.md`](./README.md) | This file |
+| [`LICENSE`](./LICENSE) | MIT License |
+
+> Use `updated_skill.md` for the most complete and up-to-date version of this skill.
+
+---
+
+## How to Use This Skill File
+
+You can drop `updated_skill.md` directly into any AI agent, MCP server, or prompt system that supports skill/instruction files.
+
+### In Claude (via MCP or system prompt)
+
+Paste the contents of `updated_skill.md` into your system prompt or MCP skill loader:
+
+```
+https://raw.githubusercontent.com/kshitizjangra/surgical-change-control/main/updated_skill.md
+```
+
+### In n8n / automation workflows
+
+Fetch the raw file at workflow start and inject it as a system instruction into your LLM node:
+
+```
+GET https://raw.githubusercontent.com/kshitizjangra/surgical-change-control/main/updated_skill.md
+```
+
+### In any MCP-compatible server
+
+Load `updated_skill.md` as a skill resource. The frontmatter metadata block at the top of the file is already formatted for MCP skill ingestion:
+
+```yaml
+name: surgical-change-control
+version: 1.0.0
+description: Use this skill when making fixes, edits, updates, or modifications...
+```
+
+### In Perplexity / Comet
+
+Paste the raw contents of `updated_skill.md` into your assistant's instruction context or use it as a connector skill payload.
 
 ---
 
@@ -57,6 +108,7 @@ Use this skill whenever the task involves **modifying an existing thing** rather
 - There are repeated or similar patterns that could be mistakenly bulk-edited
 - There is risk of touching the wrong place
 - The user wants reviewable, controlled changes
+- The agent must not guess or assume platform/tool behavior
 
 ---
 
@@ -72,6 +124,55 @@ The skill enforces an 8-step workflow:
 6. **Apply the smallest effective change** — Make only the minimum necessary edit
 7. **Verify scope discipline** — Confirm unrelated areas remain untouched
 8. **Report clearly** — Explain what changed, where, and what was intentionally left alone
+
+---
+
+## Verification Before Confidence (New in `updated_skill.md`)
+
+This is the key new layer added in `updated_skill.md`. The skill now enforces that **no uncertain information is presented as confirmed fact**.
+
+### Confidence Classification
+
+Before making a claim or recommendation, the agent must classify it:
+
+| Level | Meaning |
+|---|---|
+| **Verified** | Directly confirmed from reliable context or evidence |
+| **Likely** | Strongly inferred but not directly confirmed |
+| **Unverified** | Plausible but not confirmed |
+| **Unknown** | Not enough information available |
+
+Only **Verified** information is presented as definitive. Everything else must be clearly labelled.
+
+### Assumption Check Rule
+
+Before making or recommending a change, the agent checks if the change depends on any assumption — such as:
+
+- Assuming a platform supports a feature
+- Assuming a file is the correct source of truth
+- Assuming a setting controls behavior globally
+- Assuming repeated content should all be updated consistently
+
+If yes — the assumption is validated first, or clearly stated before proceeding.
+
+### Double-Check Trigger
+
+An extra verification step is automatically triggered when:
+
+- The answer includes platform capabilities, limitations, or behavior
+- The scope decision depends on how a tool or system actually behaves
+- The recommendation could become wrong if one factual detail is incorrect
+- The agent feels confident but has not actually verified the critical point
+
+### Communication Rule for Uncertainty
+
+Good:
+- _"This appears to be supported, but I have not verified it yet."_
+- _"I believe this is correct, but this should be confirmed before applying the change."_
+
+Bad:
+- _"This definitely works like this"_ — when not verified
+- _"All of these should be changed"_ — without confirming the dependency
 
 ---
 
@@ -97,35 +198,27 @@ Anything not explicitly required for the requested change is **out of scope** an
 - Updating one field in a config instead of replacing the entire config
 - Modifying one prompt block without rewriting all prompts
 - Proposing candidate change locations before making a multi-location update
-- Adding exact insertion guidance for every snippet
+- Labelling uncertain claims before presenting them
 
 ### Disallowed
 - Rewriting a whole system for a small requested change
 - Updating all similar occurrences automatically
 - Changing nearby content "for consistency" without approval
-- Cleaning up unrelated sections while making the fix
-- Giving detached output without saying where it belongs
+- Presenting inferred information as confirmed fact
 - Silently expanding from one approved location to multiple locations
 
 ---
 
 ## Scope Confirmation Format
 
-When a change could apply to multiple locations, the skill pauses and asks:
+When a change could apply to multiple locations, the skill pauses and presents:
 
 ```
 Requested change:
 - [brief statement of the requested update]
 
-Current safe scope assessment:
-- I found [N] candidate locations that may need modification.
-
 Candidates:
 - Candidate 1: [file] — [section/block/step]
-  - Why relevant: [brief reason]
-  - Change type: direct / related / optional
-
-- Candidate 2: [file] — [section/block/step]
   - Why relevant: [brief reason]
   - Change type: direct / related / optional
 
@@ -137,27 +230,14 @@ Please confirm which candidates should be changed.
 
 ---
 
-## Placement Guidance Standard
-
-Every proposed change includes **exact placement instructions**. No floating output that makes the user guess where it belongs.
-
-Examples of valid placement guidance:
-- _Add this inside the "Validation Rules" section after the email rule and before the password rule._
-- _Replace the second paragraph under "Refund Policy."_
-- _Update only the `timeout` field in the configuration block._
-- _Insert this step between "Review Submission" and "Send Confirmation."_
-- _Change the CTA text only in the homepage hero section, not in footer banners._
-
----
-
 ## Anti-Patterns This Skill Prevents
 
 - `"I updated all similar occurrences."`
 - `"I also cleaned up a few nearby things."`
 - `"I refactored it while I was there."`
 - `"Here is the new content"` — without placement details
+- `"This definitely works like this"` — when not verified
 - `"I assumed all matching templates needed the same update."`
-- `"I changed the structure to make it better"` — when a targeted fix was requested
 
 ---
 
@@ -172,17 +252,6 @@ When multiple valid solutions exist, this skill chooses the one that:
 5. Has the lowest regression risk
 
 > If a larger change would be cleaner but a smaller one solves the problem safely — prefer the smaller one.
-
----
-
-## Repository Structure
-
-```
-surgical-change-control/
-├── skill.md       # Full skill definition and behavioral rules
-├── README.md      # This file
-└── LICENSE        # MIT License
-```
 
 ---
 
