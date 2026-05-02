@@ -1,6 +1,7 @@
 # surgical-change-control
 
 > **A precision skill for AI agents that enforces minimal, targeted changes — protecting everything that already works.**
+> **Refer this video for more details -- https://youtu.be/LwguC9LCqf8?si=8HXds3SDhzZh6AhQ **
 
 ---
 
