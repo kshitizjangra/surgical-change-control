@@ -36,7 +36,7 @@ Instead, it enforces:
 | [`README.md`](./README.md) | This file |
 | [`LICENSE`](./LICENSE) | MIT License |
 
-> Use `updated_skill.md` for the most complete and up-to-date version of this skill.
+> Use `skill.md` for the most complete and up-to-date version of this skill.
 
 ---
 
